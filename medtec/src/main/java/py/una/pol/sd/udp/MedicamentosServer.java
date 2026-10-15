@@ -2,9 +2,18 @@ package py.una.pol.sd.udp;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import org.json.JSONObject;
 
 public class MedicamentosServer {
+    
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/medtec_db";
+    private static final String DB_USER = "postgres";
+    private static final String DB_PASSWORD = "postgres";
+
     public static void main(String[] args) {
         int port = 7000;
         System.out.println("Iniciando Servidor UDP de Consulta de Medicamentos MedTec en el puerto " + port + "...");
@@ -21,8 +30,22 @@ public class MedicamentosServer {
 
                 if ("GET_MEDICAMENTOS".equals(mensaje)) {
                     JSONObject jsonResp = new JSONObject();
-                    jsonResp.put("Paracetamol", 50);
-                    jsonResp.put("Ibuprofeno", 20);
+
+                    // Consultar la base de datos real de PostgreSQL
+                    try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                         PreparedStatement stmt = conn.prepareStatement("SELECT nombre, stock FROM medicamentos");
+                         ResultSet rs = stmt.executeQuery()) {
+
+                        while (rs.next()) {
+                            String nombre = rs.getString("nombre");
+                            int stock = rs.getInt("stock");
+                            jsonResp.put(nombre, stock);
+                        }
+
+                    } catch (Exception dbEx) {
+                        System.err.println("Error al conectar o consultar la base de datos: " + dbEx.getMessage());
+                        jsonResp.put("error", "No se pudo obtener el stock de la base de datos");
+                    }
 
                     byte[] respData = jsonResp.toString().getBytes();
                     DatagramPacket responsePacket = new DatagramPacket(
@@ -32,7 +55,7 @@ public class MedicamentosServer {
                         packet.getPort()
                     );
                     socket.send(responsePacket);
-                    System.out.println("Stock de medicamentos enviado al cliente.");
+                    System.out.println("Stock obtenido desde PostgreSQL y enviado al cliente.");
                 }
             }
         } catch (Exception e) {

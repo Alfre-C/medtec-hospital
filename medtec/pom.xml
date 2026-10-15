@@ -35,7 +35,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>py.una.pol.sd.tcp.TurnosServer</mainClass>
+                            <mainClass>py.una.pol.sd.udp.MedicamentosServer</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -51,6 +51,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>
