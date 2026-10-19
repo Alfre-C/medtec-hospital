@@ -26,7 +26,12 @@ public class MedicamentosServer {
                 socket.receive(packet);
 
                 String mensaje = new String(packet.getData(), 0, packet.getLength()).trim();
-                System.out.println("Solicitud UDP recibida: " + mensaje);
+                System.out.println("Solicitud UDP recibida de " + packet.getAddress() + ":" + packet.getPort() + " -> " + mensaje);
+
+                if ("Bye".equalsIgnoreCase(mensaje)) {
+                    System.out.println("El cliente indicó desconexión (Bye). Esperando nuevas solicitudes...");
+                    continue; // Vuelve a esperar al siguiente paquete de cualquier cliente
+                }
 
                 if ("GET_MEDICAMENTOS".equals(mensaje)) {
                     JSONObject jsonResp = new JSONObject();
@@ -56,6 +61,17 @@ public class MedicamentosServer {
                     );
                     socket.send(responsePacket);
                     System.out.println("Stock obtenido desde PostgreSQL y enviado al cliente.");
+                } else {
+                    // Responder si el comando no es reconocido
+                    String errorMsg = "Comando no reconocido. Use GET_MEDICAMENTOS o Bye.";
+                    byte[] respData = errorMsg.getBytes();
+                    DatagramPacket responsePacket = new DatagramPacket(
+                        respData,
+                        respData.length,
+                        packet.getAddress(),
+                        packet.getPort()
+                    );
+                    socket.send(responsePacket);
                 }
             }
         } catch (Exception e) {
